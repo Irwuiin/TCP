@@ -8,6 +8,10 @@
 #include <arpa/inet.h>
 #include "Practical.h"
 
+#define BUFFER_LENGTH 100
+
+const char *echoString = "Hola mundo" ;
+
 int main(int argc, char *argv[]) {
 
     if (argc < 3 || argc > 4) // Test for correct number of arguments
@@ -15,7 +19,14 @@ int main(int argc, char *argv[]) {
         "<Server Address> <Echo Word> [<Server Port>]");
 
     char *servIP = argv[1]; // First arg: server IP address (dotted quad)
-    char *echoString = argv[2]; // Second arg: string to echo
+    char *filePath = argv[2]; // Second arg: file path
+
+    //Check if the file is valid
+    FILE* inputFile = fopen(filePath, "rb");
+    if (inputFile == NULL)
+    {
+        DieWithSystemMessage("fopen() failed");
+    }
 
     // Third arg (optional): server port (numeric). 7 is well-known echo port
     in_port_t servPort = (argc == 4) ? atoi(argv[3]) : 7;
@@ -42,19 +53,40 @@ int main(int argc, char *argv[]) {
     if (connect(sock, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0)
         DieWithSystemMessage("connect() failed");
 
-    ssize_t echoStringLen = strlen(echoString); // Determine input length
+    // Determine file size
+    fseek(inputFile, 0, SEEK_END);
+    ssize_t fileSize = ftell(inputFile);
+#ifdef DEBUG
+    printf("Input file size: %d\n", (int)fileSize);
+#endif
+    rewind(inputFile);
 
-    // Send the string to the server
-    ssize_t numBytes = send(sock, echoString, echoStringLen, 0);
+    //ssize_t echoStringLen = strlen(echoString); // Determine input length
+
+    // Start sending file to the server
+    char readBuffer[BUFFER_LENGTH];
+    size_t  bytesRead = fread(readBuffer, 1, BUFFER_LENGTH, inputFile);
+#ifdef DEBUG
+    printf("Bytes read from file %d\n", (int)bytesRead);
+#endif
+    if (BUFFER_LENGTH != bytesRead)
+    {
+        DieWithSystemMessage("fread() error");
+    }
+    
+    //ssize_t numBytes = send(sock, echoString, echoStringLen, 0);
+    ssize_t numBytes = send(sock, readBuffer, bytesRead, 0);
     if (numBytes < 0)
         DieWithSystemMessage("send() failed");
-    else if (numBytes != echoStringLen)
+    //else if (numBytes != echoStringLen)
+    else if (numBytes != BUFFER_LENGTH)
         DieWithUserMessage("send()", "sent unexpected number of bytes");
 
     // Receive the same string back from the server
     unsigned int totalBytesRcvd = 0; // Count of total bytes received
-    fputs("Received: ", stdout); // Setup to print the echoed string
-    while (totalBytesRcvd < echoStringLen) {
+    fputs("Received: \n", stdout); // Setup to print the echoed string
+    //while (totalBytesRcvd < echoStringLen) {
+    while (totalBytesRcvd < BUFFER_LENGTH) {
         char buffer[BUFSIZE]; // I/O buffer
         /* Receive up to the buffer size (minus 1 to leave space for
         a null terminator) bytes from the sender */
@@ -69,7 +101,11 @@ int main(int argc, char *argv[]) {
     }
 
     fputc('\n', stdout); // Print a final linefeed
-
+    if (fclose(inputFile) != 0)
+    {
+        DieWithSystemMessage("fclose() failed");
+    }
+    
     close(sock);
     exit(0);
 }

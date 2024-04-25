@@ -4,7 +4,7 @@ LDFLAGS:=
 RM:=rm
 
 ifeq (1, $(DEBUG))
-CFLAGS+=-DDEBUG
+CFLAGS+=-DDEBUG -g
 endif
 
 SERVER:=server
