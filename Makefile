@@ -11,24 +11,30 @@ SERVER:=server
 CLIENT:=client
 EXECUTABLES:= $(SERVER) $(CLIENT)
 
-SRC_FILES:= DieWithMessage.c \
-			TCPServerUtility.c
+SERVER_FILES:=  TCPServerUtility.c \
+				server.c
+
+CLIENT_FILES:= client.c
 
 INC_FILES:= Practical.h
 
-OBJS:=$(patsubst %.c,%.o,$(SRC_FILES))
+SERVER_OBJS:=$(patsubst %.c,%.o,$(SERVER_FILES))
+CLIENT_OBJS:=$(patsubst %.c,%.o,$(CLIENT_FILES))
 
 .PHONY: all server client clean
 
 all : server client
 
-server : $(OBJS)
-	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER).c $(OBJS)
+server : $(SERVER_OBJS)
+	$(CC) $(CFLAGS) -o $(SERVER) DieWithMessage.c $(SERVER_OBJS)
 
-client : $(OBJS)
-	$(CC) $(CFLAGS) -o $(CLIENT) $(CLIENT).c $(OBJS)
+client : $(CLIENT_OBJS)
+	$(CC) $(CFLAGS) -o $(CLIENT) DieWithMessage.c $(CLIENT_OBJS)
 
-$(OBJS) : %.o:%.c
+$(SERVER_OBJS) : %.o:%.c
+	@$(CC) -c $(CFLAGS) $< -o $@
+
+$(CLIENT_OBJS) : %.o:%.c
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
