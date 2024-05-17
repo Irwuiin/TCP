@@ -1,4 +1,8 @@
+CC:=arm-linux-gnueabihf-gcc
+ifeq (1, $(HOST_EXEC))
 CC:=gcc
+endif
+
 CFLAGS:=-Wall -Wextra -pedantic -std=c99
 LDFLAGS:=
 RM:=rm
@@ -27,6 +31,7 @@ all : server client
 
 server : $(SERVER_OBJS)
 	$(CC) $(CFLAGS) -o $(SERVER) DieWithMessage.c $(SERVER_OBJS)
+	scp $(SERVER) debian@192.168.7.2:/home/debian/server
 
 client : $(CLIENT_OBJS)
 	$(CC) $(CFLAGS) -o $(CLIENT) DieWithMessage.c $(CLIENT_OBJS)

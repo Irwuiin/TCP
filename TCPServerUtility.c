@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 700
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -55,5 +57,5 @@ void HandleTCPClient(int clntSocket) {
         DieWithSystemMessage("fclose() failed");
     }
     close(clntSocket); // Close client socket
-    syncfs();
+    sync();
 }
