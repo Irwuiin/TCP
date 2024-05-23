@@ -10,12 +10,13 @@
 #include "Practical.h"
 
 extern FILE* fileStream;
+#define BUFFER_LENGTH 65536
 
 void HandleTCPClient(int clntSocket) {
-    char buffer[BUFSIZE]; // Buffer for echo string
+    char buffer[BUFFER_LENGTH]; // Buffer for echo string
     char ackMessage[] = " ACK";
     // Receive message from client
-    ssize_t numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
+    ssize_t numBytesRcvd = recv(clntSocket, buffer, BUFFER_LENGTH, 0);
 #ifdef DEBUG
     printf("Bytes received: %d\n", (int)numBytesRcvd);
 #endif
@@ -43,7 +44,7 @@ void HandleTCPClient(int clntSocket) {
         }
 
         // See if there is more data to receive
-        numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
+        numBytesRcvd = recv(clntSocket, buffer, BUFFER_LENGTH, 0);
 #ifdef DEBUG
         printf("Bytes received: %d\n", (int)numBytesRcvd);
 #endif

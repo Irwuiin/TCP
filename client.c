@@ -9,7 +9,7 @@
 #include <string.h>
 #include "Practical.h"
 
-#define BUFFER_LENGTH 100
+#define BUFFER_LENGTH 61440
 
 int main(int argc, char *argv[]) {
 
@@ -96,12 +96,14 @@ int main(int argc, char *argv[]) {
 
         // Receive ACK from the server
         unsigned int totalBytesRcvd = 0; // Count of total bytes received
-        fputs("Received:\n", stdout);
         while (totalBytesRcvd < strlen(ackMessage)) {
-            char buffer[BUFSIZE]; // I/O buffer
+            char buffer[5]; // I/O buffer
             /* Receive up to the buffer size (minus 1 to leave space for
             a null terminator) bytes from the sender */
-            numBytes = recv(sock, buffer, BUFSIZE - 1, 0);
+            numBytes = recv(sock, buffer, 5 - 1, 0);
+            #ifdef DEBUG
+            printf("Received Bytes: %d\n", (int)numBytes);
+            #endif
             if (numBytes < 0) {
                 DieWithSystemMessage("recv() failed");
             }
@@ -117,7 +119,7 @@ int main(int argc, char *argv[]) {
                 messageCounter++;
             }
             else {
-                //TODO
+                DieWithUserMessage(" ACK error","wrong sequence number!!!");
             }
         }
         fputc('\n', stdout); // Print a final linefeed

@@ -31,7 +31,7 @@ all : server client
 
 server : $(SERVER_OBJS)
 	$(CC) $(CFLAGS) -o $(SERVER) DieWithMessage.c $(SERVER_OBJS)
-	scp $(SERVER) debian@192.168.7.2:/home/debian/server
+	scp $(SERVER) debian@192.168.100.24:/home/debian/server
 
 client : $(CLIENT_OBJS)
 	$(CC) $(CFLAGS) -o $(CLIENT) DieWithMessage.c $(CLIENT_OBJS)
