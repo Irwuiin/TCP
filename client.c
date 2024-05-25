@@ -61,18 +61,18 @@ int main(int argc, char *argv[]) {
     // Determine file size
     fseek(inputFile, 0, SEEK_END);
     ssize_t remainingBytes = ftell(inputFile);
-#ifdef DEBUG
+    #ifdef DEBUG
     printf("Input file size: %d\n", (int)remainingBytes);
-#endif
+    #endif
     rewind(inputFile);
     uint8_t messageCounter = '0';
     // Start sending file to the server
     while(remainingBytes > 0) {
         char readBuffer[BUFFER_LENGTH];
         ssize_t  bytesRead = fread(readBuffer, 1, BUFFER_LENGTH, inputFile);
-    #ifdef DEBUG
+        #ifdef DEBUG
         printf("Bytes read from file %d\n", (int)bytesRead);
-    #endif
+        #endif
         if (BUFFER_LENGTH != bytesRead)
         {
             if(feof(inputFile) != 0) {
@@ -86,49 +86,54 @@ int main(int argc, char *argv[]) {
         }
         ssize_t numBytes = send(sock, readBuffer, bytesRead, 0);
         remainingBytes -= numBytes;
-    #ifdef DEBUG
+        #ifdef DEBUG
         printf("Bytes send: %d\n", (int)numBytes);
-    #endif
+        #endif
         if (numBytes < 0)
             DieWithSystemMessage("send() failed");
         else if (numBytes != bytesRead)
             DieWithUserMessage("send()", "sent unexpected number of bytes");
 
-        // Receive ACK from the server
-        unsigned int totalBytesRcvd = 0; // Count of total bytes received
-        while (totalBytesRcvd < strlen(ackMessage)) {
-            char buffer[5]; // I/O buffer
-            /* Receive up to the buffer size (minus 1 to leave space for
-            a null terminator) bytes from the sender */
-            numBytes = recv(sock, buffer, 5 - 1, 0);
-            #ifdef DEBUG
-            printf("Received Bytes: %d\n", (int)numBytes);
-            #endif
-            if (numBytes < 0) {
-                DieWithSystemMessage("recv() failed");
+        if (remainingBytes > BUFFER_LENGTH)
+        {
+            // Receive ACK from the server
+            unsigned int totalBytesRcvd = 0; // Count of total bytes received
+            while (totalBytesRcvd < strlen(ackMessage)) {
+                char buffer[5]; // I/O buffer
+                /* Receive up to the buffer size (minus 1 to leave space for
+                a null terminator) bytes from the sender */
+                numBytes = recv(sock, buffer, 5 - 1, 0);
+                #ifdef DEBUG
+                printf("Received Bytes: %d\n", (int)numBytes);
+                #endif
+                if (numBytes < 0) {
+                    DieWithSystemMessage("recv() failed");
+                }
+                else if (numBytes == 0) {
+                    DieWithUserMessage("recv()", "connection closed prematurely");
+                }
+                totalBytesRcvd += numBytes; // Keep tally of total bytes
+                // Check counter block
+                messageCounter = (messageCounter % ':') ? messageCounter : '0';
+                if (messageCounter == buffer[0]) {
+                    buffer[numBytes] = '\0'; // Terminate the string!
+                    fputs(buffer, stdout); // Print the ACK message
+                    messageCounter++;
+                }
+                else {
+                    DieWithUserMessage(" ACK error","wrong sequence number!!!");
+                }
             }
-            else if (numBytes == 0) {
-                DieWithUserMessage("recv()", "connection closed prematurely");
-            }
-            totalBytesRcvd += numBytes; // Keep tally of total bytes
-            // Check counter block
-            messageCounter = (messageCounter % ':') ? messageCounter : '0';
-            if (messageCounter == buffer[0]) {
-                buffer[numBytes] = '\0'; // Terminate the string!
-                fputs(buffer, stdout); // Print the ACK message
-                messageCounter++;
-            }
-            else {
-                DieWithUserMessage(" ACK error","wrong sequence number!!!");
-            }
+            fputc('\n', stdout); // Print a final linefeed
         }
-        fputc('\n', stdout); // Print a final linefeed
+        else { 
+            //Last transmission, no ACK message
+        }
     }
-
     if (fclose(inputFile) != 0)
-    {
-        DieWithSystemMessage("fclose() failed");
-    }
+        {
+            DieWithSystemMessage("fclose() failed");
+        }
     close(sock);
     exit(0);
 }
